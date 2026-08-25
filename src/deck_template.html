@@ -1,0 +1,375 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Process Walkthrough &mdash; Tom Trow</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E0E0E'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23ED5C45'/%3E%3C/svg%3E">
+<style>
+@font-face{font-family:'Poppins';font-weight:600;font-style:normal;font-display:block;
+  src:url(data:font/woff2;base64,{{POPPINS600}}) format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-style:normal;font-display:block;
+  src:url(data:font/woff2;base64,{{POPPINS700}}) format('woff2');}
+@font-face{font-family:'InstrumentSans';font-weight:400 600;font-style:normal;font-display:block;
+  src:url(data:font/woff2;base64,{{INSTRUMENT}}) format('woff2');}
+
+:root{
+  --coral:#ED5C45; --cream:#F4F3ED; --black:#0E0E0E; --white:#fff;
+  --disp:'Poppins',system-ui,sans-serif;
+  --body:'InstrumentSans',system-ui,-apple-system,sans-serif;
+  --ink:var(--black); --bg:var(--cream); --dim:rgba(14,14,14,.62); --line:rgba(14,14,14,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--black);font-family:var(--body);overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+
+/* ---------- 3D stage ---------- */
+.stage{position:fixed;inset:0;perspective:1800px;perspective-origin:50% 45%;
+  transform-style:preserve-3d;overflow:hidden}
+/* grid-template-columns must be DEFINITE. With place-items:center the item stops stretching,
+   so .inner's width:min(1180px,100%) resolves its % against an auto column, which is cyclic and
+   collapses to content width. Narrow-text slides ended up in the left third of the screen. */
+.slide{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr);
+  align-content:center;
+  padding:clamp(2rem,4.2vw,4.5rem) clamp(2rem,5vw,6rem) 4.2rem;
+  background:var(--bg);color:var(--ink);
+  transform-style:preserve-3d;backface-visibility:hidden;
+  opacity:0;pointer-events:none;
+  transform:translate3d(0,0,-1400px) rotateY(0deg) scale(.86);
+  transition:transform .78s cubic-bezier(.22,.85,.24,1),opacity .5s ease;
+  will-change:transform,opacity}
+.slide.black{--bg:var(--black);--ink:var(--cream);--dim:rgba(244,243,237,.62);
+  --line:rgba(244,243,237,.16)}
+.slide.cream{--bg:var(--cream);--ink:var(--black)}
+.slide.is-active{opacity:1;pointer-events:auto;
+  transform:translate3d(0,0,0) rotateY(0deg) scale(1)}
+.slide.is-prev{opacity:0;transform:translate3d(-42%,0,-820px) rotateY(26deg) scale(.9)}
+.slide.is-next{opacity:0;transform:translate3d(42%,0,-820px) rotateY(-26deg) scale(.9)}
+
+.inner{width:min(1180px,100%);margin-inline:auto;transform-style:preserve-3d;
+  transform:rotateX(var(--px,0deg)) rotateY(var(--py,0deg));
+  transition:transform .35s ease-out}
+
+/* ---------- type ---------- */
+.eyebrow{font-family:var(--body);font-size:clamp(.66rem,.82vw,.78rem);font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--coral);margin-bottom:.9rem}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(2.1rem,4.6vw,3.7rem);
+  line-height:1.04;letter-spacing:-.025em;text-wrap:balance}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(1.55rem,2.9vw,2.45rem);
+  line-height:1.08;letter-spacing:-.02em;margin-bottom:1.5rem;text-wrap:balance}
+h3{font-family:var(--disp);font-weight:600;font-size:clamp(1rem,1.32vw,1.2rem);
+  line-height:1.2;margin-bottom:.5rem}
+h4{font-family:var(--disp);font-weight:600;font-size:.74rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--coral);margin-bottom:.75rem}
+p{font-size:clamp(.9rem,1.03vw,1.02rem);line-height:1.5;color:var(--dim)}
+.lede{font-size:clamp(1rem,1.2vw,1.16rem);line-height:1.48;color:var(--ink);
+  max-width:46ch;margin-top:1.1rem}
+.lede.wide{max-width:70ch}
+.note{margin-top:1.5rem;font-size:.92rem;color:var(--ink);
+  border-left:3px solid var(--coral);padding-left:.85rem}
+.note.dim{color:var(--dim);font-size:.86rem}
+.fine{font-size:.82rem;margin-top:.7rem}
+.tag{font-family:var(--disp);font-weight:600;color:var(--coral);margin-top:1.7rem;
+  letter-spacing:.01em;font-size:1.02rem}
+b{color:var(--ink);font-weight:600}
+
+/* ---------- cover ---------- */
+.cover .inner{width:min(1180px,100%)}
+.cover-grid{display:grid;grid-template-columns:1.55fr .8fr;gap:clamp(2rem,5vw,5rem);
+  align-items:end}
+.wordmark{font-family:var(--disp);font-weight:700;color:var(--coral);
+  font-size:clamp(1.25rem,1.85vw,1.65rem);letter-spacing:.005em;line-height:1;
+  margin-bottom:1.6rem}
+.cover-side{display:flex;flex-direction:column;gap:.9rem;transform:translateZ(48px)}
+.stat{border:1px solid var(--line);padding:.95rem 1.15rem;background:rgba(244,243,237,.035)}
+.stat b{display:block;font-family:var(--disp);font-weight:700;
+  font-size:clamp(1.6rem,2.6vw,2.2rem);color:var(--ink);line-height:1}
+.stat span{font-size:.76rem;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+.coral-stat{border-color:var(--coral);background:rgba(237,92,69,.1)}
+.coral-stat b{color:var(--coral)}
+/* NOT absolute: .inner carries a transform, which makes it the containing block for
+   absolutely-positioned children, so bottom: would anchor to .inner and collide with the lede. */
+.hint{margin-top:2.6rem;font-size:.76rem;color:var(--dim)}
+kbd{font-family:var(--body);border:1px solid var(--line);padding:.05rem .32rem;
+  border-radius:3px;font-size:.72rem}
+.closing{text-align:center;display:grid;justify-items:center}
+.closing .wordmark{margin-inline:auto}
+.closestats{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:1.8rem;
+  transform:translateZ(40px)}
+.closestats .stat{min-width:150px;text-align:center}
+.closing .lede{max-width:52ch}
+
+/* ---------- tool logos ---------- */
+.tools{display:inline-flex;flex-wrap:wrap;gap:.34rem;vertical-align:middle;margin-left:.4rem}
+.slide.black .tools,.slide.cream .tools{}
+.tool{display:inline-flex;align-items:center;gap:.3rem;padding:.16rem .44rem .16rem .3rem;
+  border:1px solid var(--line);border-radius:999px;background:rgba(237,92,69,.055)}
+.tool svg{width:12px;height:12px;fill:var(--coral);flex:none;display:block}
+.tool em{font-style:normal;font-size:.66rem;font-weight:500;letter-spacing:.01em;color:var(--ink);
+  white-space:nowrap}
+/* wordmark logos carry their own name, so no text label and a wider box */
+.tool.wm{padding:.24rem .5rem}
+.tool.wm svg{width:54px;height:13px}
+.tool .chip{font-style:normal;display:grid;place-items:center;width:12px;height:12px;
+  font-size:.42rem;font-weight:700;color:var(--coral);border:1px solid var(--coral);
+  border-radius:2px;flex:none;letter-spacing:0}
+/* big grid on the stack slide */
+.slide.black > .inner > .tools{display:grid;gap:.7rem;margin:2rem 0 0;
+  grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.slide.black > .inner > .tools .tool{border-radius:4px;padding:.85rem .9rem;
+  background:rgba(244,243,237,.045);transition:transform .3s ease,border-color .3s ease}
+.slide.black > .inner > .tools .tool:hover{transform:translateZ(30px) translateY(-3px);
+  border-color:var(--coral)}
+.slide.black > .inner > .tools .tool svg{width:20px;height:20px}
+.slide.black > .inner > .tools .tool .chip{width:20px;height:20px;font-size:.6rem;border-radius:3px}
+/* tiles must tolerate a long label rather than let it run past the border */
+.slide.black > .inner > .tools .tool{min-width:0;overflow:hidden}
+.slide.black > .inner > .tools .tool em{font-size:.84rem;font-weight:500;
+  white-space:normal;overflow-wrap:anywhere;min-width:0}
+.slide.black > .inner > .tools .tool.wm svg{width:92px;height:22px}
+
+/* ---------- goals / gates / cards ---------- */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1rem,2.4vw,2.2rem)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(.9rem,2vw,1.6rem)}
+.numcard,.gatecard,.card{border:1px solid var(--line);padding:clamp(1.1rem,1.9vw,1.7rem);
+  background:rgba(14,14,14,.022);position:relative;
+  transition:transform .35s ease,border-color .35s ease}
+.slide.black .numcard,.slide.black .gatecard,.slide.black .card{background:rgba(244,243,237,.04)}
+.numcard:hover,.gatecard:hover,.card:hover{transform:translateZ(34px);border-color:var(--coral)}
+.bignum{font-family:var(--disp);font-weight:700;font-size:clamp(2.4rem,4.4vw,3.6rem);
+  line-height:.9;color:var(--coral);opacity:.28;display:block;margin-bottom:.5rem}
+.card .tools{margin:0 0 .9rem;display:inline-flex}
+.costs{display:flex;gap:1.2rem;margin-top:1.1rem;padding-top:.9rem;
+  border-top:1px solid var(--line);flex-wrap:wrap}
+.costs b{display:block;font-family:var(--disp);font-weight:700;font-size:1.16rem;color:var(--coral)}
+.costs span{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.caveat{margin-top:1.5rem;border:1px solid var(--coral);background:rgba(237,92,69,.09);
+  padding:1rem 1.15rem;transform:translateZ(20px)}
+.ctag{display:inline-block;font-size:.64rem;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--coral);margin-bottom:.4rem}
+.caveat p{color:var(--ink);font-size:.92rem;max-width:96ch}
+
+/* ---------- flow ---------- */
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(.7rem,1.5vw,1.3rem);
+  align-items:start}
+.phase{border-top:2px solid var(--coral);padding-top:.85rem}
+.phase ol{list-style:none;display:flex;flex-direction:column;gap:.42rem;counter-reset:none}
+.phase li{position:relative;font-size:.82rem;line-height:1.32;color:var(--ink);
+  border:1px solid var(--line);padding:.5rem .6rem;background:rgba(14,14,14,.022);
+  transition:transform .3s ease,border-color .3s ease}
+.slide.black .phase li{background:rgba(244,243,237,.04)}
+.phase li:hover{transform:translateZ(26px);border-color:var(--coral)}
+.phase li i{display:block;font-style:normal;font-size:.6rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--coral);margin-top:.28rem}
+.phase li.man{border-left:3px solid var(--coral);background:rgba(237,92,69,.085)}
+.phase li.new i{color:var(--coral)}
+.phase li.new{border-left:3px solid var(--coral)}
+.phase li.gate{border-left:3px dashed var(--coral)}
+.phase li i.same,.phase li i.chg2{color:var(--dim)}
+.phase li .tools{margin:.34rem 0 0;display:flex}
+
+/* ---------- finding ---------- */
+/* MUST stay scoped to .inner. The slide's theme class list also contains "finding", so an
+   unscoped .finding rule sets grid-template-columns on the <section> too and overrides the
+   slide's own single-column track, collapsing the whole slide to the left third. */
+.inner > .finding{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:1rem;margin-bottom:.4rem}
+.fcol{border:1px solid var(--line);padding:1.1rem;background:rgba(244,243,237,.04);
+  transition:transform .35s ease}
+.fcol:hover{transform:translateZ(30px)}
+.fcol.mid{border-color:var(--coral);background:rgba(237,92,69,.1)}
+.fcol p{color:var(--ink);font-size:.95rem}
+.ftag{display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:.5rem}
+.ftag.ok{color:var(--dim)} .ftag.bad{color:var(--coral)}
+
+/* ---------- changes table ---------- */
+.chgtable{display:flex;flex-direction:column;gap:.42rem}
+.chg{display:grid;grid-template-columns:2.1rem 1.05fr 1.5fr 1.5fr 1.4fr;gap:.8rem;
+  align-items:start;border:1px solid var(--line);padding:.62rem .8rem;
+  background:rgba(14,14,14,.022);transition:transform .3s ease,border-color .3s ease}
+.chg:hover{transform:translateZ(28px);border-color:var(--coral)}
+.chgnum{font-family:var(--disp);font-weight:700;font-size:.92rem;color:var(--coral);opacity:.5}
+.chgarea{font-family:var(--disp);font-weight:600;font-size:.84rem;color:var(--ink);line-height:1.25}
+.chgtoday,.chgafter{font-size:.78rem;line-height:1.34;color:var(--dim)}
+.chgafter{color:var(--ink)}
+.chgbuys{font-size:.76rem;line-height:1.34;color:var(--dim);font-style:italic}
+.mini{display:block;font-size:.56rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--coral);margin-bottom:.16rem;font-style:normal}
+
+/* ---------- steps / end ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+.stepcard{border:1px solid var(--line);padding:1.05rem;background:rgba(14,14,14,.022);
+  transition:transform .3s ease,border-color .3s ease}
+.stepcard:hover{transform:translateZ(30px);border-color:var(--coral)}
+.stepcard b{display:block;font-family:var(--disp);font-weight:700;font-size:1.5rem;
+  color:var(--coral);opacity:.32;line-height:1;margin-bottom:.4rem}
+.stepcard h4{color:var(--ink);text-transform:none;letter-spacing:-.01em;font-size:.94rem;
+  margin-bottom:.35rem}
+.stepcard p{font-size:.8rem;line-height:1.35}
+.end{list-style:none;columns:2;column-gap:2.6rem;margin-top:.4rem}
+.end li{font-size:.94rem;line-height:1.42;color:var(--ink);padding:.42rem 0 .42rem .95rem;
+  position:relative;break-inside:avoid}
+.end li::before{content:"";position:absolute;left:0;top:.92em;width:6px;height:6px;
+  background:var(--coral)}
+
+/* ---------- chrome ---------- */
+.sfoot{position:absolute;left:clamp(2rem,5vw,6rem);right:clamp(2rem,5vw,6rem);bottom:1.5rem;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  border-top:1px solid var(--line);padding-top:.7rem}
+.cover .sfoot{display:none}
+.bar{position:fixed;left:0;top:0;height:2px;background:var(--coral);z-index:40;
+  transition:width .5s cubic-bezier(.22,.85,.24,1);box-shadow:0 0 12px rgba(237,92,69,.6)}
+.dots{position:fixed;right:1.1rem;top:50%;transform:translateY(-50%);z-index:40;
+  display:flex;flex-direction:column;gap:.42rem}
+.dots button{width:7px;height:7px;border:0;padding:0;border-radius:50%;cursor:pointer;
+  background:rgba(140,140,140,.45);transition:all .25s ease}
+.dots button.on{background:var(--coral);transform:scale(1.5)}
+/* Sits ABOVE the footer rule, never across it. The footer is ~26px tall and its top border
+   sits at (sfoot bottom + 26px) from the viewport bottom, so the nav has to clear that.
+   If you change .sfoot's bottom, move this too, and the short-viewport override below. */
+.nav{position:fixed;right:1.6rem;bottom:3.7rem;z-index:40;display:flex;gap:.4rem}
+.nav button{font-family:var(--body);font-size:1rem;width:34px;height:34px;cursor:pointer;
+  background:rgba(237,92,69,.14);color:var(--coral);border:1px solid rgba(237,92,69,.45);
+  border-radius:50%;transition:background .2s ease}
+.nav button:hover{background:var(--coral);color:var(--white)}
+button:focus-visible,.dots button:focus-visible{outline:2px solid var(--coral);outline-offset:3px}
+
+@media (max-width:1100px){
+  .phases,.steps,.three{grid-template-columns:repeat(2,1fr)}
+  .chg{grid-template-columns:1.6rem 1fr;gap:.3rem .7rem}
+  .chgtoday,.chgafter,.chgbuys{grid-column:2}
+  .end{columns:1}
+  .cover-grid,.two,.finding{grid-template-columns:1fr}
+  .cover-side{flex-direction:row;flex-wrap:wrap}
+}
+/* Short viewports: a laptop at ~1440x700 leaves the densest slides only ~60px of headroom.
+   Trim the scale rather than let content run under the footer. */
+@media (max-height:780px){
+  .slide{padding-top:2.1rem;padding-bottom:3.1rem}
+  h1{font-size:clamp(1.75rem,3.4vw,2.6rem)}
+  h2{font-size:clamp(1.3rem,2.2vw,1.85rem);margin-bottom:1rem}
+  .lede{font-size:.97rem;margin-top:.8rem}
+  .note{margin-top:1rem}
+  .hint{margin-top:1.5rem}
+  .wordmark{margin-bottom:1rem}
+  .finding{gap:.7rem}
+  .fcol{padding:.85rem}
+  .numcard,.gatecard,.card,.stepcard{padding:.95rem}
+  .phase li{padding:.42rem .52rem;font-size:.78rem}
+  .chg{padding:.5rem .7rem}
+  .caveat{margin-top:1rem;padding:.8rem .95rem}
+  .end li{padding:.3rem 0 .3rem .95rem;font-size:.88rem}
+  .closestats{margin-top:1.1rem}
+  .sfoot{bottom:1.05rem}
+  .nav{bottom:3.25rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide,.inner,.tool,.chg,.fcol,.numcard,.gatecard,.card,.stepcard,.phase li{
+    transition-duration:.01ms!important}
+  .slide.is-prev,.slide.is-next{transform:none}
+  .inner{transform:none!important}
+}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="stage" id="stage">
+{{SLIDES}}
+</div>
+<div class="dots" id="dots"></div>
+<div class="nav">
+  <button id="prev" aria-label="Previous slide">&#8249;</button>
+  <button id="next" aria-label="Next slide">&#8250;</button>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length, cur = 0;
+  var bar = document.getElementById('bar');
+  var dotwrap = document.getElementById('dots');
+  var stage = document.getElementById('stage');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  slides.forEach(function(_, i){
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    b.addEventListener('click', function(){ go(i); });
+    dotwrap.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotwrap.children);
+
+  function paint(){
+    slides.forEach(function(s, i){
+      s.classList.remove('is-active', 'is-prev', 'is-next');
+      if (i === cur) s.classList.add('is-active');
+      else if (i < cur) s.classList.add('is-prev');
+      else s.classList.add('is-next');
+      s.setAttribute('aria-hidden', i === cur ? 'false' : 'true');
+    });
+    dots.forEach(function(d, i){ d.classList.toggle('on', i === cur); });
+    bar.style.width = ((cur + 1) / total * 100) + '%';
+    document.body.style.background = slides[cur].classList.contains('black') ? '#0E0E0E' : '#F4F3ED';
+  }
+  function go(i){ cur = Math.max(0, Math.min(total - 1, i)); paint(); }
+  function nextS(){ go(cur + 1); }
+  function prevS(){ go(cur - 1); }
+
+  document.getElementById('next').addEventListener('click', nextS);
+  document.getElementById('prev').addEventListener('click', prevS);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ') { e.preventDefault(); nextS(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); prevS(); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(total - 1);
+    else if (k === 'f' || k === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+
+  // click the slide body to advance, but never when grabbing text or a control
+  stage.addEventListener('click', function(e){
+    if (e.target.closest('button, a, kbd')) return;
+    if (String(window.getSelection())) return;
+    nextS();
+  });
+
+  // touch
+  var x0 = null;
+  stage.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive:true});
+  stage.addEventListener('touchend', function(e){
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 55) { if (dx < 0) nextS(); else prevS(); }
+    x0 = null;
+  }, {passive:true});
+
+  // gentle parallax so the depth reads as real
+  if (!reduce) {
+    stage.addEventListener('mousemove', function(e){
+      var inner = slides[cur].querySelector('.inner');
+      if (!inner) return;
+      var nx = (e.clientX / window.innerWidth - .5);
+      var ny = (e.clientY / window.innerHeight - .5);
+      inner.style.setProperty('--py', (nx * 4).toFixed(2) + 'deg');
+      inner.style.setProperty('--px', (-ny * 2.6).toFixed(2) + 'deg');
+    });
+    stage.addEventListener('mouseleave', function(){
+      slides.forEach(function(s){
+        var el = s.querySelector('.inner');
+        if (el) { el.style.setProperty('--py','0deg'); el.style.setProperty('--px','0deg'); }
+      });
+    });
+  }
+
+  paint();
+})();
+</script>
+</body>
+</html>
+
